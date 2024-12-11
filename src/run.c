@@ -30,7 +30,7 @@ void variational_mcmc(void)
     double delta = 2;
     gsl_rng* k = get_rand();
     int accepted = 0;
-    int n = 1000000;
+    int n = 100000;
     double temp_r1[3];
     double temp_r2[3];
     FILE* file = fopen("data/positions.csv", "w+");
