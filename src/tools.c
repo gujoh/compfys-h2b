@@ -200,12 +200,10 @@ average(
     return res / len;
 }
 
-
-double
-standard_deviation(
-                       double *v1,
-                       unsigned int len
-                  )
+double variance(
+                    double *v1,
+                    unsigned int len
+)
 {
     double result = 0;
     double mean = average(v1, len);
@@ -214,7 +212,16 @@ standard_deviation(
         double delta = v1[idx] - mean;
         result += delta * delta;
     }
-    return sqrt(result / len);
+    return result / len;
+}
+
+double
+standard_deviation(
+                       double *v1,
+                       unsigned int len
+                  )
+{
+    return sqrt(variance(v1, len));
 }
 
 double

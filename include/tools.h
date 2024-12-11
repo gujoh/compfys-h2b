@@ -195,6 +195,11 @@ average(
         unsigned int len
        );
 
+double variance(
+                    double *v1,
+                    unsigned int len
+);
+
 /* **********************************************
  *
  * Calculates the standard deviation of a vector

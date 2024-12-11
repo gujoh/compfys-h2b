@@ -7,14 +7,23 @@
 #include "tools.h"
 #include <stdbool.h>
 
+typedef struct 
+{
+    bool accepted; 
+    double wave;
+} result_t;
+
 double wave(double* r1, double* r2, double alpha);
+double d_wave(double* r1, double* r2, double alpha);
 void displace_electron(double* r, double delta, gsl_rng* k);
-int variational_mcmc_one_step(double* r1, double* r2, double delta, gsl_rng* k, double alpha);
+result_t variational_mcmc_one_step(double* r1, double* r2, double delta, gsl_rng* k, double alpha);
 gsl_rng* get_rand(void);
 void variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha,
-     double delta, bool adjust_alpha);
+     double delta, bool adjust_alpha, double a, double beta);
 double get_energy(double* r1, double* r2, double alpha);
 void task1(void);
+double autocorrelation(double *data, int data_len, int time_lag_ind);
+double block_average(double *data, int data_len, int block_size);
 
 int
 run(
@@ -29,17 +38,24 @@ run(
 
 void task1(void)
 {
-    double r1[] = {2, 0, 0};
-    double r2[] = {2, 0, 0};
+    double r1[] = {1, 0, 0};
+    double r2[] = {0, 1, 0};
     double alpha = 0.1;
     double delta = 2; 
-    variational_mcmc(r1, r2, 100000, 0, alpha, delta, false);
+    int n = 100000;
+    int n_eq = 0;
+    variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9);
 }
 
-void variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha, double delta, bool adjust_alpha)
+void variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha,
+    double delta, bool adjust_alpha, double a, double beta)
 {
     gsl_rng* k = get_rand();
     int accepted = 0;
+    double energy_accum = 0;
+    double d_ln_wave_accum = 0;
+    double energy_wave_accum = 0;
+    double* energies = (double*) malloc(sizeof(double) * n - n_eq);
     double temp_r1[3];
     double temp_r2[3];
     char buffer[50];
@@ -55,43 +71,60 @@ void variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha,
         // One step of the MCMC
         memcpy(temp_r1, r1, sizeof(temp_r1));
         memcpy(temp_r2, r2, sizeof(temp_r2));
-        int result = variational_mcmc_one_step(temp_r1, temp_r2, delta, k, alpha);
-        if (result == 1)
+        result_t result = variational_mcmc_one_step(temp_r1, temp_r2, delta, k, alpha);
+        if (result.accepted == true)
         {   
             accepted++;
             memcpy(r1, temp_r1, sizeof(temp_r1));
             memcpy(r2, temp_r2, sizeof(temp_r2));
         }
 
-        // Continuing to the next timestep before writing to file if we are
-        // in the equilibration phase. 
+        // Continuing to the next timestep before calculating quantities and
+        // writing to file if we are in the equilibration phase. 
         if (t >= n_eq)
         {
             double energy = get_energy(r1, r2, alpha);
-            fprintf(file, "%f,%f,%f,%f,%f,%f,%f\n", r1[0], r1[1], r1[2], r2[0], r2[1], r2[2], energy);
-        }
+            double d_ln_wave = d_wave(r1, r2, alpha);
+            energies[t] = energy; 
+            energy_accum += energy;
+            d_ln_wave_accum += d_ln_wave;
+            energy_wave_accum += energy * d_ln_wave;
+            fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f\n", r1[0], r1[1], r1[2], r2[0], r2[1], r2[2], alpha, energy);
 
-        if(adjust_alpha == true)
-        {
-            
+            // Adjusting alpha using gradient descent.
+            if(adjust_alpha == true)
+            {
+                int p = t - n_eq + 1;
+                double delta = a * pow(p, - beta);
+                double d_alpha = 2 * ((energy_wave_accum / p) - (energy_accum / p) * (d_ln_wave_accum / p));
+                alpha -= delta * d_alpha;
+                //printf("%f, %f, %f, %f, %f, %d\n", alpha, delta, energy_accum / (t + 1), ln_wave_accum / (t + 1), (energy_wave_accum / (t + 1)), result.accepted);
+            }
         }
+        //printf("alpha: %f\n", alpha);
     }
-    printf("Fraction accepted: %.4f\n", (float) accepted / n);
+    double block_avg = block_average(energies, n - n_eq, 1000);
+    double autocor = autocorrelation(energies, n - n_eq, 1000);
+    printf("Fraction accepted: %.5f\nAutocorrelation: %.5f\nBlock average: %.5f\nAlpha: %.5f\n",
+        (float) accepted / n, autocor, block_avg, alpha);
     fclose(file);
 }
 
-int variational_mcmc_one_step(double* r1, double* r2, double delta, gsl_rng* k, double alpha)
+result_t variational_mcmc_one_step(double* r1, double* r2, double delta, gsl_rng* k, double alpha)
 {
-    double w1 = wave(r1, r2, alpha);
+    result_t result;
+    result.accepted = 0;
+    result.wave = wave(r1, r2, alpha);
     displace_electron(r1, delta, k);
     displace_electron(r2, delta, k);
     double w2 = wave(r1, r2, alpha);
     double r = gsl_rng_uniform(k);
-    if (r < w2 / w1)
+    if (r < w2 / result.wave)
     {
-        return 1;  
+        result.wave = w2;
+        result.accepted = 1;
     }
-    return 0; 
+    return result; 
 }
 
 void displace_electron(double* r, double delta, gsl_rng* k)
@@ -109,6 +142,12 @@ double wave(double* r1, double* r2, double alpha)
     double r12_len = distance_between_vectors(r1, r2, 3);
     return exp(- 2 * r1_len) * exp(- 2 * r2_len) * 
         exp(r12_len / (2 + 2 * alpha * r12_len));
+}
+
+double d_wave(double* r1, double* r2, double alpha)
+{
+    double r12_len = distance_between_vectors(r1, r2, 3);
+    return 2 * r12_len / pow(2 * r12_len * alpha + 2, 2); 
 }
 
 double get_energy(double* r1, double* r2, double alpha)
@@ -138,4 +177,35 @@ gsl_rng* get_rand(void){
     time_t seed = time(NULL);
     gsl_rng_set(r, seed);
     return r;
+}
+
+double autocorrelation(double *data, int data_len, int time_lag_ind)
+{
+    double mean = average(data, data_len);
+    double var = variance(data, data_len);
+    double cov = 0;
+    for (int idx = 0; idx < data_len - time_lag_ind; idx++)
+    {
+        cov += (data[idx] - mean) * (data[idx + time_lag_ind] - mean); // Covariance 
+    }
+    return cov / (var * (data_len - time_lag_ind)); // Covariance / variance = correlation
+}
+
+double block_average(double *data, int data_len, int block_size)
+{
+    int n_blocks = data_len / block_size;
+    double* blocks = (double*) malloc(sizeof(double) * n_blocks);
+    memset(blocks, 0, n_blocks * sizeof(double));
+    for (int jdx = 0; jdx < n_blocks; jdx++)
+    {
+        for (int idx = 0; idx < block_size; idx++)
+        {
+            blocks[jdx] += data[idx + jdx * block_size];
+        }
+        blocks[jdx] /= block_size;
+    }
+    double var = variance(data, data_len);
+    double block_var = variance(blocks, n_blocks);
+    free(blocks);
+    return block_size * block_var / var;
 }
