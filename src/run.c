@@ -5,13 +5,16 @@
 #include <string.h>
 #include <time.h>
 #include "tools.h"
+#include <stdbool.h>
 
 double wave(double* r1, double* r2, double alpha);
 void displace_electron(double* r, double delta, gsl_rng* k);
 int variational_mcmc_one_step(double* r1, double* r2, double delta, gsl_rng* k, double alpha);
 gsl_rng* get_rand(void);
-void variational_mcmc(void);
+void variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha,
+     double delta, bool discard, bool adjust_alpha);
 double get_energy(double* r1, double* r2, double alpha);
+void task1(void);
 
 int
 run(
@@ -19,22 +22,29 @@ run(
     char *argv[]
    )
 {
-    variational_mcmc();
+    // TASK 1
+    task1();
     return 0;
 }
 
-void variational_mcmc(void)
+void task1(void)
 {
     double r1[] = {2, 0, 0};
-    double r2[] = {-2, 0, 0};
+    double r2[] = {0, 2, 0};
     double alpha = 0.1;
-    double delta = 2;
+    double delta = 2; 
+    variational_mcmc(r1, r2, 100000, 0, alpha, delta, false, false);
+}
+
+void variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha, double delta, bool discard, bool adjust_alpha)
+{
     gsl_rng* k = get_rand();
     int accepted = 0;
-    int n = 100000;
     double temp_r1[3];
     double temp_r2[3];
-    FILE* file = fopen("data/positions.csv", "w+");
+    char buffer[50];
+    sprintf(buffer, "data/data_neq%d_alpha_%.3f.csv", n_eq, alpha);
+    FILE* file = fopen(buffer, "w+");
     if (file == NULL)
     {
         printf("File could not be opened.\n");
@@ -48,8 +58,8 @@ void variational_mcmc(void)
         if (result == 1)
         {   
             accepted++;
-            memcpy(r1, temp_r1, sizeof(r1));
-            memcpy(r2, temp_r2, sizeof(r2));
+            memcpy(r1, temp_r1, sizeof(temp_r1));
+            memcpy(r2, temp_r2, sizeof(temp_r2));
         }
         double energy = get_energy(r1, r2, alpha);
         fprintf(file, "%f,%f,%f,%f,%f,%f,%f\n", r1[0], r1[1], r1[2], r2[0], r2[1], r2[2], energy);
