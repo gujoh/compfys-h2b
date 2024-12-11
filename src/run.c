@@ -30,7 +30,7 @@ run(
 void task1(void)
 {
     double r1[] = {2, 0, 0};
-    double r2[] = {0, 2, 0};
+    double r2[] = {2, 0, 0};
     double alpha = 0.1;
     double delta = 2; 
     variational_mcmc(r1, r2, 100000, 0, alpha, delta, false, false);
