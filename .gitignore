@@ -1,0 +1,13 @@
+*.o
+*.d
+__pycache__
+makefile
+*
+!*.*
+!/**/
+/lib 
+/obj
+/obj_nep
+.venv
+.vscode 
+Figures
