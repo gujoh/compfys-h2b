@@ -11,3 +11,4 @@ makefile
 .venv
 .vscode 
 Figures
+.DS_Store
