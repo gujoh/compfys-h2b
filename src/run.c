@@ -11,6 +11,7 @@ void displace_electron(double* r, double delta, gsl_rng* k);
 int variational_mcmc_one_step(double* r1, double* r2, double delta, gsl_rng* k, double alpha);
 gsl_rng* get_rand(void);
 void variational_mcmc(void);
+double get_energy(double* r1, double* r2, double alpha);
 
 int
 run(
@@ -50,8 +51,8 @@ void variational_mcmc(void)
             memcpy(r1, temp_r1, sizeof(r1));
             memcpy(r2, temp_r2, sizeof(r2));
         }
-        //printf("%f,%f,%f,%f,%f,%f\n", r1[0], r1[1], r1[2], r2[0], r2[1], r2[2]);
-        fprintf(file, "%f,%f,%f,%f,%f,%f\n", r1[0], r1[1], r1[2], r2[0], r2[1], r2[2]);
+        double energy = get_energy(r1, r2, alpha);
+        fprintf(file, "%f,%f,%f,%f,%f,%f,%f\n", r1[0], r1[1], r1[2], r2[0], r2[1], r2[2], energy);
     }
     printf("Fraction accepted: %.4f\n", (float) accepted / n);
     fclose(file);
@@ -86,6 +87,24 @@ double wave(double* r1, double* r2, double alpha)
     double r12_len = distance_between_vectors(r1, r2, 3);
     return exp(- 2 * r1_len) * exp(- 2 * r2_len) * 
         exp(r12_len / (2 + 2 * alpha * r12_len));
+}
+
+double get_energy(double* r1, double* r2, double alpha)
+{
+    double r12_len = distance_between_vectors(r1, r2, 3);
+    double r_norm_diff[] = {0, 0, 0};
+    double r_diff[] = {0, 0, 0};
+    double r1_norm[3]; 
+    double r2_norm[3];
+    memcpy(r1_norm, r1, sizeof(r1_norm)); 
+    memcpy(r2_norm, r2, sizeof(r2_norm)); 
+    double denominator = 1 + alpha * r12_len;
+    normalize_vector(r1_norm, 3);
+    normalize_vector(r2_norm, 3);
+    elementwise_subtraction(r_norm_diff, r1_norm, r2_norm, 3);
+    elementwise_subtraction(r_diff, r1, r2, 3);
+    return - 4 * (dot_product(r_norm_diff, r_diff, 3)) / (r12_len * pow(denominator, 2)) -
+        1 / (r12_len * pow(denominator, 3)) - 1 / (4 * pow(denominator, 4)) + 1 / r12_len;
 }
 
 gsl_rng* get_rand(void){

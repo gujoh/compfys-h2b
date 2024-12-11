@@ -15,6 +15,14 @@ elementwise_addition(
                      unsigned int len
                     );
 
+void
+elementwise_subtraction(
+                     double *res,
+                     double *v1,
+                     double *v2,
+                     unsigned int len
+                    );                   
+
 /* **********************************************
  *
  * Multiply v1 and v2 elementwise

@@ -22,6 +22,20 @@ elementwise_addition(
 }
 
 void
+elementwise_subtraction(
+                     double *res,
+                     double *v1,
+                     double *v2,
+                     unsigned int len
+                    )
+{
+    for (size_t idx = 0; idx < len; idx++)
+    {
+        res[idx] = v1[idx] - v2[idx];
+    }
+}
+
+void
 elementwise_multiplication(
                            double *res,
                            double *v1,
