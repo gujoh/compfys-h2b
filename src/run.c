@@ -12,7 +12,7 @@ void displace_electron(double* r, double delta, gsl_rng* k);
 int variational_mcmc_one_step(double* r1, double* r2, double delta, gsl_rng* k, double alpha);
 gsl_rng* get_rand(void);
 void variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha,
-     double delta, bool discard, bool adjust_alpha);
+     double delta, bool adjust_alpha);
 double get_energy(double* r1, double* r2, double alpha);
 void task1(void);
 
@@ -33,10 +33,10 @@ void task1(void)
     double r2[] = {2, 0, 0};
     double alpha = 0.1;
     double delta = 2; 
-    variational_mcmc(r1, r2, 100000, 0, alpha, delta, false, false);
+    variational_mcmc(r1, r2, 100000, 0, alpha, delta, false);
 }
 
-void variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha, double delta, bool discard, bool adjust_alpha)
+void variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha, double delta, bool adjust_alpha)
 {
     gsl_rng* k = get_rand();
     int accepted = 0;
@@ -50,8 +50,9 @@ void variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha,
         printf("File could not be opened.\n");
         exit(1); 
     }
-    for (int i = 0; i < n; i++)
+    for (int t = 0; t < n; t++)
     {
+        // One step of the MCMC
         memcpy(temp_r1, r1, sizeof(temp_r1));
         memcpy(temp_r2, r2, sizeof(temp_r2));
         int result = variational_mcmc_one_step(temp_r1, temp_r2, delta, k, alpha);
@@ -61,8 +62,19 @@ void variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha,
             memcpy(r1, temp_r1, sizeof(temp_r1));
             memcpy(r2, temp_r2, sizeof(temp_r2));
         }
-        double energy = get_energy(r1, r2, alpha);
-        fprintf(file, "%f,%f,%f,%f,%f,%f,%f\n", r1[0], r1[1], r1[2], r2[0], r2[1], r2[2], energy);
+
+        // Continuing to the next timestep before writing to file if we are
+        // in the equilibration phase. 
+        if (t >= n_eq)
+        {
+            double energy = get_energy(r1, r2, alpha);
+            fprintf(file, "%f,%f,%f,%f,%f,%f,%f\n", r1[0], r1[1], r1[2], r2[0], r2[1], r2[2], energy);
+        }
+
+        if(adjust_alpha == true)
+        {
+            
+        }
     }
     printf("Fraction accepted: %.4f\n", (float) accepted / n);
     fclose(file);
