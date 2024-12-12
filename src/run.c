@@ -60,8 +60,8 @@ void task1(void)
 
 void task2(void)
 {
-    double r1[] = {30, 30, 30};
-    double r2[] = {-30, -30, -30};
+    double r1[] = {75, 75, 75};
+    double r2[] = {-75, -75, -75};
     double alpha = 0.1;
     double delta = 2; 
     int n = 5000;
