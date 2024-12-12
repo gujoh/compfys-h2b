@@ -18,6 +18,7 @@ typedef struct
     double autocorrelation;
     double block_average;
     double alpha;
+    double avg_energy;
 } result_mcmc;
 
 double wave(double* r1, double* r2, double alpha);
@@ -42,8 +43,8 @@ run(
 {
     // TASK 1
     //task1();
-    task2();
-   // task3();
+    //task2();
+    task3();
     return 0;
 }
 
@@ -77,12 +78,11 @@ void task3(void)
     double increment = 0.01;
     int n_alphas = 21;
     double alphas[n_alphas];
-    double autocorrelations[n_alphas];
-    double block_avgs[n_alphas];
     double delta = 2; 
     int n = 100000;
-    int n_eq = 20000;
+    int n_eq = 1000;
     int n_runs = 100;
+    FILE* file = fopen("data/task3.csv", "w+");
 
     // Generating alpha values.
     for (int i = 0; i < n_alphas; i++)
@@ -90,24 +90,29 @@ void task3(void)
         alphas[i] = alpha0; 
         alpha0 += increment;
     }
-
     // Calculating the statistical inefficiency for each alpha value.
     for (int i = 0; i < n_alphas; i++)
     {
         double autocorrelation_accum = 0;
         double block_avg_accum = 0; 
+        double energy_accum = 0;
         for (int j = 0; j < n_runs; j++)
         {
             result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alphas[i],
                 delta, false, 1, 1, false, false);
             autocorrelation_accum += result.autocorrelation;
             block_avg_accum += result.block_average;
+            energy_accum += result.avg_energy;
         }
-        autocorrelations[i] = autocorrelation_accum / n_runs; 
-        block_avgs[i] = block_avg_accum / n_runs;
+        autocorrelation_accum /= n_runs; 
+        block_avg_accum /= n_runs;
+        energy_accum /= n_runs;
+        printf("alpha = %.4f, avg energy = %.4f, autocor = %.4f, block avg = %.4f\n", 
+            alphas[i], energy_accum, autocorrelation_accum, block_avg_accum);
+        fprintf(file, "%f, %f, %f, %f\n", alphas[i], energy_accum,
+            autocorrelation_accum, block_avg_accum);
     }
-
-
+    fclose(file);
 }
 
 result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha,
@@ -140,7 +145,6 @@ result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double
             memcpy(r1, temp_r1, sizeof(temp_r1));
             memcpy(r2, temp_r2, sizeof(temp_r2));
         }
-
         // Continuing to the next timestep before calculating quantities and
         // writing to file if we are in the equilibration phase. 
         if (t >= n_eq)
@@ -176,7 +180,11 @@ result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double
     result.alpha = alpha; 
     result.autocorrelation = autocor;
     result.block_average = block_avg;
-    fclose(file);
+    result.avg_energy = energy_accum / (n - n_eq);
+    if (write_file == true)
+    {
+        fclose(file);
+    }
     return result;
 }
 
