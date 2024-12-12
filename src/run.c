@@ -27,13 +27,15 @@ void displace_electron(double* r, double delta, gsl_rng* k);
 result_t variational_mcmc_one_step(double* r1, double* r2, double delta, gsl_rng* k, double alpha);
 gsl_rng* get_rand(void);
 result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha,
-     double delta, bool adjust_alpha, double a, double beta, bool print, bool write_file);
+    double delta, bool adjust_alpha, double a, double beta, bool print,
+    bool write_file, int time_lag);
 double get_energy(double* r1, double* r2, double alpha);
+double autocorrelation(double *data, int data_len, int time_lag_ind);
+double block_average(double *data, int data_len, int block_size);
 void task1(void);
 void task2(void);
 void task3(void);
-double autocorrelation(double *data, int data_len, int time_lag_ind);
-double block_average(double *data, int data_len, int block_size);
+void task4(void);
 
 int
 run(
@@ -44,7 +46,8 @@ run(
     // TASK 1
     //task1();
     //task2();
-    task3();
+    //task3();
+    task4();
     return 0;
 }
 
@@ -56,7 +59,7 @@ void task1(void)
     double delta = 2; 
     int n = 1000000;
     int n_eq = 0;
-    result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, true, true);
+    result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, true, true, 1000);
 }
 
 void task2(void)
@@ -67,7 +70,7 @@ void task2(void)
     double delta = 2; 
     int n = 5000;
     int n_eq = 0;
-    result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, true, true);
+    result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, true, true, 1000);
 }
 
 void task3(void)
@@ -99,7 +102,7 @@ void task3(void)
         for (int j = 0; j < n_runs; j++)
         {
             result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alphas[i],
-                delta, false, 1, 1, false, false);
+                delta, false, 1, 1, false, false, 1000);
             autocorrelation_accum += result.autocorrelation;
             block_avg_accum += result.block_average;
             energy_accum += result.avg_energy;
@@ -115,8 +118,21 @@ void task3(void)
     fclose(file);
 }
 
+void task4(void)
+{
+    double r1[] = {0.5, 0, 0};
+    double r2[] = {0, -0.5, 0};
+    double alpha = 0.1;
+    double delta = 2; 
+    int n = 1000000;
+    int n_eq = 0;
+    result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, true, 1, 0.7, true, false, 1000);
+
+}
+
 result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha,
-    double delta, bool adjust_alpha, double a, double beta, bool print, bool write_file)
+    double delta, bool adjust_alpha, double a, double beta, bool print,
+    bool write_file, int time_lag)
 {
     gsl_rng* k = get_rand();
     int accepted = 0;
@@ -169,8 +185,8 @@ result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double
             }
         }
     }
-    double block_avg = block_average(energies, n - n_eq, 1000);
-    double autocor = autocorrelation(energies, n - n_eq, 1000);
+    double block_avg = block_average(energies, n - n_eq, time_lag);
+    double autocor = autocorrelation(energies, n - n_eq, time_lag);
     if (print == true)
     {
         printf("Fraction accepted: %.5f\nAutocorrelation: %.5f\nBlock average: %.5f\nAlpha: %.5f\n",
