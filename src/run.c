@@ -95,9 +95,9 @@ void variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha,
             if(adjust_alpha == true)
             {
                 int p = t - n_eq + 1;
-                double delta = a * pow(p, - beta);
+                double step = a * pow(p, - beta);
                 double d_alpha = 2 * ((energy_wave_accum / p) - (energy_accum / p) * (d_ln_wave_accum / p));
-                alpha -= delta * d_alpha;
+                alpha -= step * d_alpha;
                 //printf("%f, %f, %f, %f, %f, %d\n", alpha, delta, energy_accum / (t + 1), ln_wave_accum / (t + 1), (energy_wave_accum / (t + 1)), result.accepted);
             }
         }
