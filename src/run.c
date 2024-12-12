@@ -48,8 +48,8 @@ run(
 
 void task1(void)
 {
-    double r1[] = {1, 0, 0};
-    double r2[] = {0, 1, 0};
+    double r1[] = {0.5, 0, 0};
+    double r2[] = {0, -0.5, 0};
     double alpha = 0.1;
     double delta = 2; 
     int n = 100000;
