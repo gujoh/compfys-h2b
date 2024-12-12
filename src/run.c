@@ -41,7 +41,8 @@ run(
    )
 {
     // TASK 1
-    task1();
+    //task1();
+    task2();
    // task3();
     return 0;
 }
@@ -59,13 +60,13 @@ void task1(void)
 
 void task2(void)
 {
-    double r1[] = {5, 0, 0};
-    double r2[] = {0, 5, 0};
+    double r1[] = {75, 0, 0};
+    double r2[] = {0, -75, 0};
     double alpha = 0.1;
     double delta = 2; 
-    int n = 100000;
-    int n_eq = 20000;
-    result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, true, false);
+    int n = 5000;
+    int n_eq = 0;
+    result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, true, true);
 }
 
 void task3(void)
