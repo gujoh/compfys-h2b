@@ -52,7 +52,7 @@ void task1(void)
     double r2[] = {0, -0.5, 0};
     double alpha = 0.1;
     double delta = 2; 
-    int n = 100000;
+    int n = 1000000;
     int n_eq = 0;
     result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, true, true);
 }
@@ -121,7 +121,7 @@ result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double
     double temp_r1[3];
     double temp_r2[3];
     char buffer[50];
-    sprintf(buffer, "data/data_neq%d_alpha_%.3f.csv", n_eq, alpha);
+    sprintf(buffer, "data/data_n%d_neq%d_alpha_%.3f.csv", n, n_eq, alpha);
     FILE* file;
     if (write_file == true)
     {
