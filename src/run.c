@@ -319,3 +319,22 @@ double block_average(double *data, int data_len, int block_size)
     free(blocks);
     return block_size * block_var / var;
 }
+
+void init_rand_electrons(double* r_1, double* r_2, double radius, gsl_rng* k){
+
+    for(int i = 0; i < 3; ++i){
+
+        r_1[i] = gsl_rng_uniform(k) - .5;
+        r_2[i] = gsl_rng_uniform(k) - .5;
+    }
+
+    len_r1 = vector_norm(r_1, 3);
+    len_r2 = vector_norm(r_2, 3);
+
+    for(int i = 0; i < 3; ++i){
+
+        r_1[i] =  radius * r_1[i] / len_r1;
+        r_2[i] =  radius * r_2[i] / len_r2;
+    }
+
+}
