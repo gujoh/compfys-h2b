@@ -188,7 +188,7 @@ result_t variational_mcmc_one_step(double* r1, double* r2, double delta, gsl_rng
     displace_electron(r2, delta, k);
     double w2 = wave(r1, r2, alpha);
     double r = gsl_rng_uniform(k);
-    if (r < (w2 * w2)/ (result.wave * result.wave))
+    if (r < (w2 * w2) / (result.wave * result.wave))
     {
         result.wave = w2;
         result.accepted = 1;
@@ -233,7 +233,7 @@ double get_energy(double* r1, double* r2, double alpha)
     normalize_vector(r2_norm, 3);
     elementwise_subtraction(r_norm_diff, r1_norm, r2_norm, 3);
     elementwise_subtraction(r_diff, r1, r2, 3);
-    return - 4 * (dot_product(r_norm_diff, r_diff, 3)) / (r12_len * pow(denominator, 2)) -
+    return - 4 + (dot_product(r_norm_diff, r_diff, 3)) / (r12_len * pow(denominator, 2)) -
         1 / (r12_len * pow(denominator, 3)) - 1 / (4 * pow(denominator, 4)) + 1 / r12_len;
 }
 
