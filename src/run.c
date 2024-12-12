@@ -122,11 +122,10 @@ result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double
     double temp_r2[3];
     char buffer[50];
     sprintf(buffer, "data/data_neq%d_alpha_%.3f.csv", n_eq, alpha);
-    FILE* file = fopen(buffer, "w+");
-    if (file == NULL)
+    FILE* file;
+    if (write_file == true)
     {
-        printf("File could not be opened.\n");
-        exit(1); 
+        file = fopen(buffer, "w+");
     }
     for (int t = 0; t < n; t++)
     {
