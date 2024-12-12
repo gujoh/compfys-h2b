@@ -126,7 +126,23 @@ void task4(void)
     double delta = 2; 
     int n = 1000000;
     int n_eq = 0;
-    result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, true, 1, 0.7, true, false, 1000);
+    int n_runs = 100;
+    double betas[] = {0.6, 0.7, 0.8, 0.9, 1};
+    for (int i = 0; i < sizeof(betas) / sizeof(double); i++)
+    {
+        double alpha_converge = 0;
+        int k = 0;
+        for (int j = 0; j < n_runs; j++)
+        {
+            result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, true, 1, betas[i], false, false, 1000);
+            if (fabs(result.alpha) < 1) 
+            {
+                alpha_converge += result.alpha;
+                k++;
+            }
+        }
+        printf("beta = %.4f: alpha = %.4f\n", betas[i], alpha_converge / k);
+    }
 
 }
 
@@ -241,7 +257,7 @@ double wave(double* r1, double* r2, double alpha)
 double d_wave(double* r1, double* r2, double alpha)
 {
     double r12_len = distance_between_vectors(r1, r2, 3);
-    return 2 * r12_len / pow(2 * r12_len * alpha + 2, 2); 
+    return - 2 * (r12_len * r12_len) / pow(2 * r12_len * alpha + 2, 2); 
 }
 
 double get_energy(double* r1, double* r2, double alpha)
