@@ -81,7 +81,7 @@ void task3(void)
     double delta = 2; 
     int n = 100000;
     int n_eq = 1000;
-    int n_runs = 100;
+    int n_runs = 200;
     FILE* file = fopen("data/task3.csv", "w+");
 
     // Generating alpha values.
