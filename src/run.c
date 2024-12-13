@@ -74,10 +74,7 @@ void task2(void)
 
     n = 10000;
     n_eq = 1000;
-    int num_block_sizes = 10000;
-    int min_block_size = 1;
-    int max_block_size = (n - n_eq) / 500;
-    int step = (max_block_size - min_block_size) / num_block_sizes;
+    int num_block_sizes = 2000;
     int n_runs = 10;
 
     FILE* file = fopen("data/task2b.csv", "w+");
@@ -182,7 +179,7 @@ result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double
     double energy_accum = 0;
     double d_ln_wave_accum = 0;
     double energy_wave_accum = 0;
-    double* energies = (double*) malloc(sizeof(double) * n - n_eq);
+    double* energies = (double*) malloc(sizeof(double) * (n - n_eq));
     double temp_r1[3];
     double temp_r2[3];
     char buffer[50];
