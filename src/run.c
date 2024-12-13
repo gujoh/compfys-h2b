@@ -125,17 +125,17 @@ void task4(void)
     double alpha = 0.1;
     double delta = 2; 
     int n = 1000000;
-    int n_eq = 0;
-    int n_runs = 100;
+    int n_eq = 5000;
+    int n_runs = 500;
     double betas[] = {0.6, 0.7, 0.8, 0.9, 1};
     for (int i = 0; i < sizeof(betas) / sizeof(double); i++)
     {
-        double alpha_converge = 0;
         int k = 0;
+        double alpha_converge = 0;
         for (int j = 0; j < n_runs; j++)
         {
             result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, true, 1, betas[i], false, false, 1000);
-            if (fabs(result.alpha) < 1) 
+            if (fabs(result.alpha) < 1)
             {
                 alpha_converge += result.alpha;
                 k++;
@@ -143,7 +143,6 @@ void task4(void)
         }
         printf("beta = %.4f: alpha = %.4f\n", betas[i], alpha_converge / k);
     }
-
 }
 
 result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha,
@@ -328,8 +327,8 @@ void init_rand_electrons(double* r_1, double* r_2, double radius, gsl_rng* k){
         r_2[i] = gsl_rng_uniform(k) - .5;
     }
 
-    len_r1 = vector_norm(r_1, 3);
-    len_r2 = vector_norm(r_2, 3);
+    double len_r1 = vector_norm(r_1, 3);
+    double len_r2 = vector_norm(r_2, 3);
 
     for(int i = 0; i < 3; ++i){
 
