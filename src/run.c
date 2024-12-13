@@ -72,7 +72,7 @@ void task2(void)
     int n_eq = 0;
     //result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, true, true, 1000);
 
-    n = 100000;
+    n = 10000;
     n_eq = 1000;
     int num_block_sizes = 10000;
     int min_block_size = 1;
@@ -203,7 +203,7 @@ result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double
         {
             double energy = get_energy(r1, r2, alpha);
             double d_ln_wave = d_wave(r1, r2, alpha);
-            energies[t] = energy; 
+            energies[t - n_eq] = energy;// / (t - n_eq); 
             energy_accum += energy;
             d_ln_wave_accum += d_ln_wave;
             energy_wave_accum += energy * d_ln_wave;
