@@ -71,6 +71,24 @@ void task2(void)
     int n = 5000;
     int n_eq = 0;
     result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, true, true, 1000);
+
+    int n = 100000;
+    int n_eq = 1000;
+    int num_block_sizes = 100;
+    int min_block_size = 1;
+    int max_block_size = (n - n_eq)500;
+    int step = (max_block_size - min_block_size) / num_block_sizes;
+
+    FILE* file = fopen("data/task2b.csv", "w+");
+
+    for(int i = 1; i <= num_block_sizes; ++i){
+        
+        int block_size = step * i;
+        result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, false, false, block_size);
+        fprintf(file, "%f,%f\n", result.autocorrelation, result.block_average);
+    }
+    
+    fclose(file);
 }
 
 void task3(void)
