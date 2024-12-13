@@ -124,28 +124,28 @@ void task4(void)
     double r2[] = {0, -0.5, 0};
     double alpha = 0.1;
     double delta = 2; 
-    int n = 100000;
+    int n = 500000;
     int n_eq = 5000;
-    int n_runs = 500;
+    int n_runs = 200;
     double betas[] = {0.6, 0.7, 0.8, 0.9, 1};
-    result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, true, 1, betas[1], true, true, 1000);
-    // for (int i = 0; i < sizeof(betas) / sizeof(double); i++)
-    // {
-    //     int k = 0;
-    //     double alpha_converge = 0;
-    //     for (int j = 0; j < n_runs; j++)
-    //     {
-    //         result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, true, 1, betas[i], false, false, 1000);
-    //         if (fabs(result.alpha) < 1)
-    //         {
-    //             alpha_converge += result.alpha;
-    //             k++;
-    //         }
-    //        //printf("%f, %f\n", result.alpha, result.avg_energy);
-    //     }
-    // printf("beta = %.4f: alpha = %.4f\n", betas[i], alpha_converge / k);
-    // }
-    printf("beta = %.4f: alpha = %.4f\n", betas[1], result.alpha);
+    //result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, true, 1, betas[1], true, true, 1000);
+    for (int i = 0; i < sizeof(betas) / sizeof(double); i++)
+    {
+        int k = 0;
+        double alpha_converge = 0;
+        for (int j = 0; j < n_runs; j++)
+        {
+            result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, true, 1, betas[i], false, false, 1000);
+            if (true) //(fabs(result.alpha) < 1)
+            {
+                alpha_converge += result.alpha;
+                k++;
+            }
+           //printf("%f, %f\n", result.alpha, result.avg_energy);
+        }
+    printf("beta = %.4f: alpha = %.4f\n", betas[i], alpha_converge / k);
+    }
+    //printf("beta = %.4f: alpha = %.4f\n", betas[1], result.alpha);
 }
 
 result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha,
@@ -194,7 +194,7 @@ result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double
                 fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f\n", r1[0], r1[1], r1[2], r2[0], r2[1], r2[2], alpha, energy);
             }
             // Adjusting alpha using gradient descent.
-            if(adjust_alpha == true)
+            if(adjust_alpha == true && t % 50 == 0)
             {
                 int p = t - n_eq + 1;
                 double step = a * pow(p, - beta);
