@@ -20,6 +20,7 @@ typedef struct
     double alpha;
     double avg_energy;
     double accepted_fraction;
+    double gradient;
 } result_mcmc;
 
 double wave(double* r1, double* r2, double alpha);
@@ -28,8 +29,7 @@ void displace_electron(double* r, double delta, gsl_rng* k);
 result_t variational_mcmc_one_step(double* r1, double* r2, double delta, gsl_rng* k, double alpha);
 gsl_rng* get_rand(void);
 result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha,
-    double delta, bool adjust_alpha, double a, double beta, bool print,
-    bool write_file, int time_lag);
+    double delta, bool print, bool write_file, int time_lag);
 double get_energy(double* r1, double* r2, double alpha);
 double autocorrelation(double *data, int data_len, int time_lag_ind);
 double block_average(double *data, int data_len, int block_size);
@@ -45,12 +45,11 @@ run(
     char *argv[]
    )
 {
-    // TASK 1
     //task1();
-    task2();
+    //task2();
     //task3();
     //task4();
-    //task5();
+    task5();
     return 0;
 }
 
@@ -62,7 +61,8 @@ void task1(void)
     double delta = 1.2; 
     int n = 1000000;
     int n_eq = 0;
-    result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, true, true, 1000);
+    result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha,
+        delta, true, true, 1000);
 }
 
 void task2(void)
@@ -73,7 +73,8 @@ void task2(void)
     double delta = 1.2; 
     int n = 5000;
     int n_eq = 0;
-    //result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, true, true, 1000);
+    //result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha,
+    //    delta, true, true, 1000);
 
     n = 10000;
     n_eq = 1000;
@@ -89,12 +90,14 @@ void task2(void)
         double accepted_fraction_accum = 0;
         for (int j = 0; j < n_runs; j++)
         {
-            result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, false, false, i);
+            result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, 
+                delta, false, false, i);
             autocor_accum += result.autocorrelation;
             block_avg_accum += result.block_average;
             accepted_fraction_accum += result.accepted_fraction;
         }
-        fprintf(file, "%f,%f,%f,%d\n", autocor_accum / n_runs, block_avg_accum / n_runs, accepted_fraction_accum / n_runs, i);
+        fprintf(file, "%f,%f,%f,%d\n", autocor_accum / n_runs,
+            block_avg_accum / n_runs, accepted_fraction_accum / n_runs, i);
     }
     
     fclose(file);
@@ -108,10 +111,10 @@ void task3(void)
     double increment = 0.01;
     int n_alphas = 21;
     double alphas[n_alphas];
-    double delta = 2; 
-    int n = 100000;
+    double delta = 1.2; 
+    int n = 1000000;
     int n_eq = 1000;
-    int n_runs = 200;
+    int n_runs = 25;
     FILE* file = fopen("data/task3.csv", "w+");
 
     // Generating alpha values.
@@ -123,24 +126,20 @@ void task3(void)
     // Calculating the statistical inefficiency for each alpha value.
     for (int i = 0; i < n_alphas; i++)
     {
-        double autocorrelation_accum = 0;
-        double block_avg_accum = 0; 
         double energy_accum = 0;
+        double energies[n_runs];
         for (int j = 0; j < n_runs; j++)
         {
             result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alphas[i],
-                delta, false, 1, 1, false, false, 1000);
-            autocorrelation_accum += result.autocorrelation;
-            block_avg_accum += result.block_average;
+                delta, false, false, 1000);
             energy_accum += result.avg_energy;
+            energies[j] = result.avg_energy;
         }
-        autocorrelation_accum /= n_runs; 
-        block_avg_accum /= n_runs;
         energy_accum /= n_runs;
-        printf("alpha = %.4f, avg energy = %.4f, autocor = %.4f, block avg = %.4f\n", 
-            alphas[i], energy_accum, autocorrelation_accum, block_avg_accum);
-        fprintf(file, "%f, %f, %f, %f\n", alphas[i], energy_accum,
-            autocorrelation_accum, block_avg_accum);
+        double var = (10. / n_runs) * variance(energies, n_runs); // 10 is the statistical inefficiency. 
+        printf("alpha = %.4f, avg energy = %.4f, std = %.4f\n", alphas[i],
+            energy_accum, sqrt(var));
+        fprintf(file, "%f,%f,%f\n", alphas[i], energy_accum, sqrt(var));
     }
     fclose(file);
 }
@@ -149,23 +148,27 @@ void task4(void)
 {
     double r1[] = {0.5, 0, 0};
     double r2[] = {0, -0.5, 0};
-    double alpha = 0.1;
-    double delta = 2; 
-    int n = 200000;
-    int n_eq = 500;
-    int n_runs = 200;
+    double delta = 1.2; 
+    int n = 100000;
+    int n_eq = 1000;
+    int n_runs = 2500;
     double betas[] = {0.6, 0.7, 0.8, 0.9, 1};
+    FILE* file = fopen("data/task4.csv", "w+");
     for (int i = 0; i < sizeof(betas) / sizeof(double); i++)
     {
-        double alpha_converge = 0;
+        double alpha = 0.1;
         for (int j = 0; j < n_runs; j++)
         {
-            result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, true, 1, betas[i], false, false, 1000);
-            alpha_converge += result.alpha;
-           //printf("%f, %f\n", result.alpha, result.avg_energy);
+            fprintf(file, "%f,", (float) alpha);
+            result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha,
+                 delta, false, false, 1000);
+            double step = 1 * pow(j + 1, - betas[i]);
+            alpha -= step * result.gradient;
         }
-        printf("beta = %.4f: alpha = %.4f\n", betas[i], alpha_converge / n_runs);
+        fprintf(file, "\n");
+        printf("beta = %.4f: alpha = %.4f\n", betas[i], alpha);
     }
+    fclose(file);
 }
 
 void task5(void)
@@ -173,14 +176,15 @@ void task5(void)
     double r1[] = {0.5, 0, 0};
     double r2[] = {0, -0.5, 0};
     double alpha = 0.15;
-    double delta = 2; 
-    int n = 100000;
+    double delta = 1.2; 
+    int n = 1000000;
     int n_eq = 1000;
-    result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, true, true, 1000);
+    result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha,
+         delta, true, true, 1000);
 }
 
 result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double alpha,
-    double delta, bool adjust_alpha, double a, double beta, bool print,
+    double delta, bool print,
     bool write_file, int time_lag)
 {
     gsl_rng* k = get_rand();
@@ -224,14 +228,6 @@ result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double
             {
                 fprintf(file, "%f,%f,%f,%f,%f,%f,%f,%f\n", r1[0], r1[1], r1[2], r2[0], r2[1], r2[2], alpha, energy);
             }
-            // Adjusting alpha using gradient descent.
-            if(adjust_alpha == true && t % 20 == 0)
-            {
-                int p = t - n_eq + 1;
-                double step = a * pow(p, - beta);
-                double d_alpha = 2 * ((energy_wave_accum / p) - (energy_accum / p) * (d_ln_wave_accum / p));
-                alpha -= step * d_alpha;
-            }
         }
     }
     double block_avg = block_average(energies, n - n_eq, time_lag);
@@ -241,12 +237,17 @@ result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double
         printf("Fraction accepted: %.5f\nAutocorrelation: %.5f\nBlock average: %.5f\nAlpha: %.5f\n",
             (float) accepted / n, autocor, block_avg, alpha);
     }
+    // Computing the gradient such that we can update alpha. 
+    int p = n - n_eq + 1;
+    double d_alpha = 2 * ((energy_wave_accum / p) - (energy_accum / p) * (d_ln_wave_accum / p));
+
     result_mcmc result; 
     result.alpha = alpha; 
     result.autocorrelation = autocor;
     result.block_average = block_avg;
     result.avg_energy = energy_accum / (n - n_eq);
     result.accepted_fraction = (float) accepted / n;
+    result.gradient = d_alpha;
     if (write_file == true)
     {
         fclose(file);
