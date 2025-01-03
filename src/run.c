@@ -19,6 +19,7 @@ typedef struct
     double block_average;
     double alpha;
     double avg_energy;
+    double accepted_fraction;
 } result_mcmc;
 
 double wave(double* r1, double* r2, double alpha);
@@ -46,10 +47,10 @@ run(
 {
     // TASK 1
     //task1();
-    //task2();
+    task2();
     //task3();
     //task4();
-    task5();
+    //task5();
     return 0;
 }
 
@@ -58,7 +59,7 @@ void task1(void)
     double r1[] = {0.5, 0, 0};
     double r2[] = {0, -0.5, 0};
     double alpha = 0.1;
-    double delta = 2; 
+    double delta = 1.2; 
     int n = 1000000;
     int n_eq = 0;
     result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, true, true, 1000);
@@ -69,7 +70,7 @@ void task2(void)
     double r1[] = {75, 0, 0};
     double r2[] = {0, -75, 0};
     double alpha = 0.1;
-    double delta = 2; 
+    double delta = 1.2; 
     int n = 5000;
     int n_eq = 0;
     //result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, true, true, 1000);
@@ -85,13 +86,15 @@ void task2(void)
         
         double autocor_accum = 0;
         double block_avg_accum = 0;
+        double accepted_fraction_accum = 0;
         for (int j = 0; j < n_runs; j++)
         {
             result_mcmc result = variational_mcmc(r1, r2, n, n_eq, alpha, delta, false, 1, 0.9, false, false, i);
             autocor_accum += result.autocorrelation;
             block_avg_accum += result.block_average;
+            accepted_fraction_accum += result.accepted_fraction;
         }
-        fprintf(file, "%f,%f,%d\n", autocor_accum / n_runs, block_avg_accum / n_runs, i);
+        fprintf(file, "%f,%f,%f,%d\n", autocor_accum / n_runs, block_avg_accum / n_runs, accepted_fraction_accum / n_runs, i);
     }
     
     fclose(file);
@@ -243,6 +246,7 @@ result_mcmc variational_mcmc(double r1[3], double r2[3], int n, int n_eq, double
     result.autocorrelation = autocor;
     result.block_average = block_avg;
     result.avg_energy = energy_accum / (n - n_eq);
+    result.accepted_fraction = (float) accepted / n;
     if (write_file == true)
     {
         fclose(file);
